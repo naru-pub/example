@@ -1,0 +1,20 @@
+name: Deploy to Naru
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: naru-pub/actions/deploy@v1
+        with:
+          site: example
+          dir: public
