@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>글 목록 · 작은 기록</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-page="posts">
+    <header>
+      <a class="brand" href="./index.html">작은 기록.</a>
+      <nav aria-label="메뉴">
+        <a href="./index.html" aria-current="page">글 목록</a
+        ><a href="./guestbook.html">방명록</a><a href="./admin.html">글쓰기</a>
+      </nav>
+    </header>
+    <main>
+      <p class="eyebrow">A SMALL JOURNAL</p>
+      <h1>작은 기록</h1>
+      <p class="lead">일상에서 발견한 생각과 이야기를 모읍니다.</p>
+      <form id="filter-form" class="card">
+        <label for="filter-category">분류로 찾기</label>
+        <input
+          id="filter-category"
+          maxlength="60"
+          placeholder="예: 일상 (비우면 전체)"
+        />
+        <button id="filter-submit">적용</button>
+      </form>
+      <div id="entries"></div>
+      <button id="more" hidden>더 읽기</button>
+      <p class="hint">
+        서버에 저장된 생성 시각을 기준으로 최신 글부터 표시됩니다.
+      </p>
+      <p id="status" role="status" aria-live="polite">불러오는 중…</p>
+    </main>
+    <footer>
+      나루 데이터베이스 예제 ·
+      <a href="https://naru.pub/docs/database">사용 안내</a>
+    </footer>
+    <script type="module" src="./list.js"></script>
+  </body>
+</html>
