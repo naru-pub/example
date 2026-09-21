@@ -27,7 +27,7 @@ async function load(reset = false) {
     if (reset) $("entries").replaceChildren();
     for (const doc of page.documents) {
       const data = doc.data && typeof doc.data === "object" ? doc.data : {};
-      const card = element("article", "", "card");
+      const card = element("article", "", "entry");
       if (guestbook) {
         card.append(
           element("h2", text(data.name, "방문자")),
@@ -41,10 +41,16 @@ async function load(reset = false) {
         card.append(
           heading,
           element("p", text(data.body).slice(0, 160), "excerpt"),
-          element("p", text(data.category, "미분류"), "meta"),
         );
       }
-      card.append(element("p", date(doc.createdAt), "meta"));
+      const category = guestbook ? "" : text(data.category);
+      card.append(
+        element(
+          "p",
+          [date(doc.createdAt), category].filter(Boolean).join(" · "),
+          "meta",
+        ),
+      );
       $("entries").append(card);
     }
     cursor = page.nextCursor;
@@ -53,10 +59,10 @@ async function load(reset = false) {
       $("entries").children.length
         ? ""
         : guestbook
-          ? "첫 인사를 남겨 주세요."
+          ? "아직 아무도 남기지 않았습니다."
           : category
-            ? "해당 분류의 글이 없습니다."
-            : "아직 글이 없습니다. 글쓰기에서 첫 글을 작성하세요.",
+            ? "이 분류에는 글이 없습니다."
+            : "아직 글이 없습니다.",
     );
     return true;
   } catch (e) {
@@ -81,7 +87,7 @@ if (guestbook)
     event.preventDefault();
     const name = $("name").value.trim(),
       body = $("message").value.trim();
-    if (!name || !body) return message("이름과 내용을 입력하세요.");
+    if (!name || !body) return message("이름과 한마디를 입력하세요.");
     $("submit").disabled = true;
     try {
       db ??= await connect();
@@ -91,12 +97,12 @@ if (guestbook)
       const refreshed = await load(true);
       message(
         refreshed
-          ? "인사를 남겼습니다. 최신 인사부터 표시됩니다."
-          : "인사는 저장되었지만 목록을 불러오지 못했습니다. 다시 제출하지 말고 페이지를 새로고침하세요.",
+          ? "남겼습니다."
+          : "저장되었지만 목록을 불러오지 못했습니다. 다시 남기지 말고 새로고침하세요.",
       );
     } catch (e) {
       message(
-        `${errorMessage(e)} 응답이 끊겼다면 이미 저장되었을 수 있으니 목록을 확인한 후 다시 제출하세요.`,
+        `${errorMessage(e)} 목록에 이미 올라왔는지 확인한 뒤 다시 남기세요.`,
       );
     } finally {
       $("submit").disabled = false;

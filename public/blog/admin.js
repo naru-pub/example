@@ -47,19 +47,14 @@ function updateUI() {
   $("logout").disabled = busy;
   for (const id of ["title", "body", "category"]) $(id).readOnly = busy;
   $("manage-list").disabled = busy || !owner;
-  $("auth").textContent = owner
-    ? "관리자 로그인됨"
-    : "글을 관리하려면 사이트 소유자로 로그인하세요.";
+  $("auth").textContent = owner ? "로그인됨" : "주인만 쓸 수 있습니다.";
   $("editing").textContent =
     state.kind === "posts"
-      ? `공개 글 편집 · ${state.id}`
+      ? "공개한 글 고치는 중"
       : state.kind === "drafts"
-        ? `비공개 초안 편집 · ${state.id}`
-        : "새 글 작성";
-  $("publish").textContent =
-    state.kind === "posts" ? "공개 글 저장" : "글 공개하기";
-  $("delete-post").textContent =
-    state.kind === "drafts" ? "이 초안 삭제" : "이 공개 글 삭제";
+        ? "초안 고치는 중"
+        : "새 글";
+  $("publish").textContent = state.kind === "posts" ? "저장" : "공개";
   if (!owner) {
     $("manage-list").replaceChildren();
     $("manage-more").hidden = true;
@@ -80,7 +75,7 @@ async function run(action) {
   }
 }
 function canLeave() {
-  return !dirty || window.confirm("저장하지 않은 변경 사항을 버릴까요?");
+  return !dirty || window.confirm("저장하지 않은 내용을 버릴까요?");
 }
 function clearEditor() {
   state = { id: null, kind: null, hasDraft: false, extra: {} };
@@ -129,9 +124,7 @@ async function loadList(reset = true) {
         saveLocal();
         $("view-post").hidden = kind !== "posts";
         $("view-post").href = `./post.html?id=${encodeURIComponent(latest.id)}`;
-        message(
-          "글을 불러왔습니다. 저장하면 현재 서버 내용을 덮어씁니다. 여러 탭에서 동시에 편집하지 마세요.",
-        );
+        message("");
       }),
     );
     row.append(button, element("span", date(doc.updatedAt), "meta"));
@@ -140,7 +133,7 @@ async function loadList(reset = true) {
   cursor = page.nextCursor;
   $("manage-more").hidden = !cursor;
   if (!$("manage-list").children.length)
-    $("manage-list").append(element("p", "저장된 글이 없습니다.", "hint"));
+    $("manage-list").append(element("p", "없습니다.", "hint"));
 }
 async function refreshAfterWrite(notice) {
   try {
@@ -148,15 +141,13 @@ async function refreshAfterWrite(notice) {
     message(notice);
   } catch (e) {
     if (e.code === "AUTH_REQUIRED") owner = null;
-    message(`${notice} 목록 갱신에 실패했습니다. ${errorMessage(e)}`);
+    message(`${notice} 목록은 불러오지 못했습니다. ${errorMessage(e)}`);
   }
 }
 try {
   db = await connect();
   owner = await db.auth.session();
-  message(
-    owner ? "승인되었습니다. 공개 글과 비공개 초안을 관리할 수 있습니다." : "",
-  );
+  message("");
 } catch (e) {
   message(errorMessage(e));
 }
@@ -187,9 +178,7 @@ try {
     dirty = true;
   }
 } catch {
-  message(
-    "임시 저장된 초안을 읽을 수 없습니다. 새 글을 작성하거나 저장소 설정을 확인하세요.",
-  );
+  message("쓰던 글을 되살리지 못했습니다.");
 }
 updateUI();
 $("login").addEventListener("click", () =>
@@ -208,10 +197,10 @@ $("logout").addEventListener("click", () =>
     updateUI();
     try {
       await previous?.signOut();
-      message("관리자 권한과 이 탭의 임시 저장을 해제했습니다.");
+      message("로그아웃했습니다.");
     } catch (e) {
       message(
-        `로컬 권한은 해제되었습니다. 서버 해제에 실패했습니다. 제어판에서 토큰을 폐기하거나 만료를 기다리세요. ${errorMessage(e)}`,
+        `이 기기에서는 로그아웃했지만 나루에 알리지 못했습니다. ${errorMessage(e)}`,
       );
     }
   }),
@@ -221,38 +210,34 @@ $("post-form").addEventListener("input", () => {
   try {
     saveLocal();
   } catch {
-    message(
-      "임시 저장을 사용할 수 없습니다. 페이지를 떠나기 전에 글을 복사하세요.",
-    );
+    message("자동 저장이 되지 않습니다. 떠나기 전에 글을 복사해 두세요.");
   }
 });
 $("new-post").addEventListener("click", () =>
   run(async () => {
     if (canLeave()) {
       clearEditor();
-      message("새 글을 작성하세요.");
+      message("");
     }
   }),
 );
 $("save-draft").addEventListener("click", () =>
   run(async () => {
-    if (!owner) throw new Error("관리자 로그인이 필요합니다.");
-    if (!$("title").value.trim()) throw new Error("초안 제목을 입력하세요.");
+    if (!owner) throw new Error("먼저 로그인하세요.");
+    if (!$("title").value.trim()) throw new Error("제목을 입력하세요.");
     saveLocal();
     await owner.collection("drafts").set(state.id, data());
     state.kind = "drafts";
     state.hasDraft = true;
     dirty = false;
     saveLocal();
-    await refreshAfterWrite(
-      "비공개 초안을 저장했습니다. 같은 ID의 공개 글이 있다면 그대로 유지됩니다.",
-    );
+    await refreshAfterWrite("초안을 저장했습니다.");
   }),
 );
 $("post-form").addEventListener("submit", (event) => {
   event.preventDefault();
   return run(async () => {
-    if (!owner) throw new Error("관리자 로그인이 필요합니다.");
+    if (!owner) throw new Error("먼저 로그인하세요.");
     if (!$("title").value.trim() || !$("body").value.trim())
       throw new Error("제목과 본문을 입력하세요.");
     saveLocal();
@@ -263,26 +248,21 @@ $("post-form").addEventListener("submit", (event) => {
     saveLocal();
     $("view-post").href = `./post.html?id=${encodeURIComponent(state.id)}`;
     $("view-post").hidden = false;
-    await refreshAfterWrite(
-      "공개 글을 저장했습니다. 계속 편집하거나 새 글을 작성할 수 있습니다.",
-    );
+    await refreshAfterWrite("공개했습니다.");
   });
 });
 $("delete-post").addEventListener("click", () =>
   run(async () => {
     if (!owner || !state.kind) return;
-    const label = state.kind === "drafts" ? "비공개 초안" : "공개 글";
     if (
       !window.confirm(
-        `${label} '${$("title").value}'을 영구 삭제할까요? 되돌릴 수 없습니다.`,
+        `‘${$("title").value}’을(를) 지울까요? 되돌릴 수 없습니다.`,
       )
     )
       return;
     await owner.collection(state.kind).delete(state.id);
     clearEditor();
-    await refreshAfterWrite(
-      `${label}을 삭제했습니다. 다른 컬렉션의 같은 ID 문서는 그대로 유지됩니다.`,
-    );
+    await refreshAfterWrite("지웠습니다.");
   }),
 );
 $("reload-list").addEventListener("click", () => run(() => loadList(true)));
