@@ -123,7 +123,8 @@ async function loadList(reset = true) {
         dirty = false;
         saveLocal();
         $("view-post").hidden = kind !== "posts";
-        $("view-post").href = `./post.html?id=${encodeURIComponent(latest.id)}`;
+        $("view-post").href =
+          `../post.html?id=${encodeURIComponent(latest.id)}`;
         message("");
       }),
     );
@@ -246,7 +247,7 @@ $("post-form").addEventListener("submit", (event) => {
     state.hasDraft = false;
     dirty = false;
     saveLocal();
-    $("view-post").href = `./post.html?id=${encodeURIComponent(state.id)}`;
+    $("view-post").href = `../post.html?id=${encodeURIComponent(state.id)}`;
     $("view-post").hidden = false;
     await refreshAfterWrite("공개했습니다.");
   });

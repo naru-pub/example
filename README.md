@@ -17,5 +17,5 @@ The `example` site needs these collections, created in https://naru.pub/database
 - `guestbook`: read 누구나, write 누구나 생성만
 - `drafts`: read 관리자만, write 관리자만
 
-and `https://example.naru.pub/blog/admin.html` registered under 웹사이트 관리자 로그인
+and `https://example.naru.pub/blog/admin/` registered under 웹사이트 관리자 로그인
 with `posts` and `drafts`.
